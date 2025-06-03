@@ -12,6 +12,7 @@ The data consists of the NetflixViewingHistory.csv file downloaded from my Netfl
 
 Future Plans 📌📌📌
 By expanding the project:
+
 Visualization (matplotlib / seaborn), #this has been done :heavy_check_mark:
 
 Total watch time calculations 
