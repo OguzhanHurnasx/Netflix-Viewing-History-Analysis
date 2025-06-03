@@ -1,28 +1,40 @@
 import pandas as pd
+import matplotlib.pyplot as plt
 
-
-
+# Load the CSV file
 df = pd.read_csv(r"C:\Users\user\Downloads\NetflixViewingHistory.csv")
+
+# Convert the date column to datetime format
 df["Date"] = pd.to_datetime(df["Date"])
-df["HaftaGunu"] = df["Date"].dt.day_name()
-df["Ay"]  = df["Date"].dt.month
-df["Gün"] = df["Date"].dt.day
+df["Weekday"] = df["Date"].dt.day_name()
+df["Month"]  = df["Date"].dt.month
+df["Day"] = df["Date"].dt.day
 
-df_sezonlu = df[df["Title"].str.contains("Sezon",na = False)].copy()
-df_sezonlu["Sezon"] = df_sezonlu["Title"].str.extract(r"(\d+)\. Sezon").astype("Int64")
-df_sezonlu["Dizi"] = df_sezonlu["Title"].str.extract(r"^(.*?): \d+\. Sezon",expand=False).str.strip()
+# Filter out entries that contain a season (indicating a series episode)
+df_seasonal = df[df["Title"].str.contains("Season", na=False)].copy()
+df_seasonal["Season"] = df_seasonal["Title"].str.extract(r"(\d+)\. Season").astype("Int64")
+df_seasonal["Series"] = df_seasonal["Title"].str.extract(r"^(.*?): \d+\. Season", expand=False).str.strip()
 
-"""Burda Sezonlarımızın Hangi Dizileri İçerdiğini Görürüz Örneğim 1.Sezonda Alpha Male Dizisi Varken 2.Sezonda
-Kullanıcının İzlenme Listesinde Olmayabilir"""
-Sezon_Kapasitesi = df_sezonlu.groupby("Sezon")["Dizi"].apply(lambda x: list(set(x)))
-print(Sezon_Kapasitesi)
+# Show which series exist in each season
+# Example: Season 1 might have Alpha Male series, but Season 2 might not include it
+season_content = df_seasonal.groupby("Season")["Series"].apply(lambda x: list(set(x)))
+# print(season_content)
 
-"""Burda Kullanıcının Dizileri Kaç Farklı Günde İzlendiğini Görürüz"""
-Hangi_Dizi_Kac_Gun = df_sezonlu.groupby("Dizi")["Gün"].nunique()
-print(Hangi_Dizi_Kac_Gun)
+# Show how many different days each series was watched
+series_watch_days = df_seasonal.groupby("Series")["Day"].nunique()
+# print(series_watch_days)
 
+# Show the most watched weekday for each series
+daily_watch_counts = df_seasonal.groupby(["Series", "Weekday"]).size()
+most_watched_day = daily_watch_counts.groupby(level=0).idxmax()
+# print(most_watched_day)
 
-"""Burda Kullanıcının İzlediği Dizilerinin En Çok İzlendiği Gün Hangisi ise Onu Görürüz"""
-gunluk_izlenme = df_sezonlu.groupby(["Dizi", "HaftaGunu"]).size()
-en_cok_izlenen_gun = gunluk_izlenme.groupby(level = 0).idxmax()
-print(en_cok_izlenen_gun)
+# Visualization: How many different days each series was watched
+plt.figure(figsize=(10,6))
+series_watch_days.sort_values().plot(kind='barh', color="lightseagreen")
+plt.xlabel("Number of Days")
+plt.ylabel("Series")
+plt.title("Number of Different Days Each Series Was Watched")
+plt.grid(axis='x', linestyle="--", alpha=0.5)
+plt.tight_layout()
+plt.show()
